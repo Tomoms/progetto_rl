@@ -14,7 +14,7 @@ String sep = String(':');
 String zero = String('0');
 volatile short time_mode = 0, alarm_mode = 0;
 unsigned long last_press;
-bool alarm_set = 0, alarm_ringing = 0;
+bool alarm_set = 0, alarm_ringing = 0, clear_alarm = 0;
 
 String build_string(int n)
 {
@@ -54,8 +54,11 @@ void alarm_ISR(void)
       alarm_ringing = 0;
       return;
     }
-    if (++alarm_mode == 3)
+    if (!alarm_mode && alarm_set) {
+      clear_alarm = 1;
+    } else if (++alarm_mode == 3) {
       alarm_mode = 0;
+    }
   }
 }
 
@@ -134,6 +137,14 @@ void set_time()
   }
 }
 
+void unset_alarm()
+{
+  alarm_set = 0;
+  lcd.setCursor(9, 1);
+  lcd.print("      ");
+  clear_alarm = 0;
+}
+
 void set_alarm()
 {
   if (!alarm_set) {
@@ -209,6 +220,8 @@ void loop()
     set_time();
   if (alarm_mode)
     set_alarm();
+  else if (clear_alarm)
+    unset_alarm();
   if (alarm_set && !s && (alarm_m == m) && (alarm_h == h))
     ring();
 }
